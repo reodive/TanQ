@@ -1,0 +1,247 @@
+// Prisma schema for ?????? MVP
+// Defines core entities: users, schools, questions, forum, credits, and commerce flows.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  student
+  responder
+  schoolAdmin
+  sysAdmin
+}
+
+enum RankTier {
+  rookie
+  explorer
+  mentor
+  master
+  legend
+}
+
+enum QuestionStatus {
+  draft
+  queued
+  assigned
+  answered
+  closed
+}
+
+enum CreditTxnType {
+  debit        // credits consumed
+  credit       // credits granted
+  refund       // credits returned after resolution
+  bonus        // promotional bonus credits
+  purchase     // credits purchased
+  adjustment   // manual admin adjustment
+}
+
+enum PurchaseItem {
+  plan
+  credits
+}
+
+enum PurchaseStatus {
+  pending
+  completed
+  failed
+  cancelled
+}
+
+enum SchoolPlan {
+  free
+  starter
+  growth
+  enterprise
+}
+
+enum BillingStatus {
+  trial
+  active
+  delinquent
+  suspended
+  cancelled
+}
+
+model User {
+  id           String        @id @default(uuid())
+  name         String
+  email        String        @unique
+  passwordHash String
+  role         Role
+  schoolId     String?
+  school       School?       @relation(fields: [schoolId], references: [id])
+  rank         RankTier      @default(rookie)
+  ratingAvg    Float         @default(0)
+  ratingCount  Int           @default(0)
+  questions    Question[]    @relation("QuestionStudent")
+  answers      Answer[]      @relation("AnswerResponder")
+  reviews      Review[]      @relation("ReviewRater")
+  wallet       CreditWallet?
+  forumThreads ForumThread[]
+  forumPosts   ForumPost[]
+  purchases    Purchase[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+model School {
+  id            String      @id @default(uuid())
+  name          String
+  plan          SchoolPlan  @default(free)
+  seats         Int         @default(5)
+  billingStatus BillingStatus @default(trial)
+  users         User[]
+  purchases     Purchase[]
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+}
+
+model CreditWallet {
+  id        String      @id @default(uuid())
+  userId    String      @unique
+  balance   Int         @default(0)
+  user      User        @relation(fields: [userId], references: [id])
+  txns      CreditTxn[]
+  updatedAt DateTime    @updatedAt
+}
+
+model CreditTxn {
+  id        String        @id @default(uuid())
+  walletId  String
+  wallet    CreditWallet  @relation(fields: [walletId], references: [id])
+  delta     Int           // positive for credit, negative for debit
+  type      CreditTxnType
+  refId     String?
+  memo      String?
+  createdAt DateTime      @default(now())
+
+  @@index([walletId, createdAt])
+}
+
+model Question {
+  id             String          @id @default(uuid())
+  studentId      String
+  student        User            @relation("QuestionStudent", fields: [studentId], references: [id])
+  title          String
+  body           String          @db.Text
+  tags           String[]        @default([])
+  charCount      Int
+  creditCost     Int
+  status         QuestionStatus  @default(draft)
+  assignedToId   String?
+  assignedTo     User?           @relation("QuestionAssignee", fields: [assignedToId], references: [id])
+  assignedAt     DateTime?
+  answeredAt     DateTime?
+  aiCheckPassed  Boolean         @default(false)
+  aiFeedback     String?         @db.Text
+  answers        Answer[]
+  reviews        Review[]        @relation("QuestionReview")
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  @@index([status, createdAt])
+  @@index([assignedToId])
+}
+
+model Answer {
+  id           String      @id @default(uuid())
+  questionId   String
+  responderId  String
+  body         String      @db.Text
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  question     Question    @relation(fields: [questionId], references: [id])
+  responder    User        @relation("AnswerResponder", fields: [responderId], references: [id])
+  reviews      Review[]
+
+  @@unique([questionId, responderId])
+}
+
+model Review {
+  id         String      @id @default(uuid())
+  answerId   String
+  raterId    String
+  stars      Int
+  comment    String?     @db.Text
+  createdAt  DateTime    @default(now())
+  answer     Answer      @relation(fields: [answerId], references: [id])
+  rater      User        @relation("ReviewRater", fields: [raterId], references: [id])
+  question   Question?   @relation("QuestionReview", fields: [questionId], references: [id])
+  questionId String?
+
+  @@unique([answerId, raterId])
+}
+
+model ForumThread {
+  id          String      @id @default(uuid())
+  title       String
+  tags        String[]    @default([])
+  createdById String
+  createdBy   User        @relation(fields: [createdById], references: [id])
+  createdAt   DateTime    @default(now())
+  posts       ForumPost[]
+}
+
+model ForumPost {
+  id            String      @id @default(uuid())
+  threadId      String
+  body          String      @db.Text
+  createdById   String
+  parentPostId  String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  likes         Int         @default(0)
+  reports       Int         @default(0)
+  thread        ForumThread @relation(fields: [threadId], references: [id])
+  createdBy     User        @relation(fields: [createdById], references: [id])
+  parentPost    ForumPost?  @relation("ForumReplies", fields: [parentPostId], references: [id])
+  replies       ForumPost[] @relation("ForumReplies")
+}
+
+model Purchase {
+  id          String         @id @default(uuid())
+  userId      String?
+  schoolId    String?
+  item        PurchaseItem
+  amountJpy   Int
+  credits     Int           @default(0)
+  gatewayRef  String?
+  status      PurchaseStatus @default(pending)
+  metadata    Json?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  user        User?          @relation(fields: [userId], references: [id])
+  school      School?        @relation(fields: [schoolId], references: [id])
+
+  @@index([userId])
+  @@index([schoolId])
+}
+
+model SessionToken {
+  id         String   @id @default(uuid())
+  userId     String
+  token      String   @unique
+  expiresAt  DateTime
+  user       User     @relation(fields: [userId], references: [id])
+  createdAt  DateTime @default(now())
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  actorId   String?
+  action    String
+  entity    String?
+  entityId  String?
+  meta      Json?
+  createdAt DateTime @default(now())
+  actor     User?    @relation(fields: [actorId], references: [id])
+
+  @@index([actorId, createdAt])
+}
