@@ -15,6 +15,13 @@ import {
 type SchoolPlanValue = keyof typeof SCHOOL_PLAN_LABELS;
 type BillingStatusValue = keyof typeof BILLING_STATUS_LABELS;
 
+type SchoolUser = {
+  id: string;
+  name: string;
+  email: string;
+  role: keyof typeof ROLE_LABELS;
+};
+
 const SCHOOL_PLAN_VALUES = Object.keys(SCHOOL_PLAN_LABELS) as SchoolPlanValue[];
 const BILLING_STATUS_VALUES = Object.keys(BILLING_STATUS_LABELS) as BillingStatusValue[];
 
@@ -133,7 +140,7 @@ export default async function AdminSchoolPage({ params }: { params: { id: string
       </Card>
       <Card title="所属ユーザー">
         <ul className="space-y-2 text-sm text-slate-700">
-          {school.users.map((user) => (
+          {school.users.map((user: SchoolUser) => (
             <li key={user.id}>
               {user.name} / {user.email} / {resolveLabel(ROLE_LABELS, user.role)}
             </li>
