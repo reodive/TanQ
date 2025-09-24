@@ -3,7 +3,6 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/server-auth";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { BillingStatus, SchoolPlan } from "@prisma/client";
 import {
   ROLE_LABELS,
   SCHOOL_PLAN_LABELS,
@@ -12,6 +11,20 @@ import {
   PURCHASE_STATUS_LABELS,
   resolveLabel
 } from "@/lib/labels";
+
+type SchoolPlanValue = keyof typeof SCHOOL_PLAN_LABELS;
+type BillingStatusValue = keyof typeof BILLING_STATUS_LABELS;
+
+const SCHOOL_PLAN_VALUES = Object.keys(SCHOOL_PLAN_LABELS) as SchoolPlanValue[];
+const BILLING_STATUS_VALUES = Object.keys(BILLING_STATUS_LABELS) as BillingStatusValue[];
+
+function isSchoolPlan(value: string): value is SchoolPlanValue {
+  return (SCHOOL_PLAN_LABELS as Record<string, string>)[value] !== undefined;
+}
+
+function isBillingStatus(value: string): value is BillingStatusValue {
+  return (BILLING_STATUS_LABELS as Record<string, string>)[value] !== undefined;
+}
 
 // 学校の契約情報と設定を管理するページ。
 export default async function AdminSchoolPage({ params }: { params: { id: string } }) {
@@ -46,19 +59,14 @@ export default async function AdminSchoolPage({ params }: { params: { id: string
     const allowed = user.role === "sysAdmin" || (user.role === "schoolAdmin" && user.schoolId === params.id);
     if (!allowed) return;
     const planEntry = formData.get("plan");
-    const plan =
-      typeof planEntry === "string" && (Object.values(SchoolPlan) as string[]).includes(planEntry)
-        ? (planEntry as SchoolPlan)
-        : undefined;
+    const plan = typeof planEntry === "string" && isSchoolPlan(planEntry) ? planEntry : undefined;
 
     const seatsEntry = formData.get("seats");
     const seats = typeof seatsEntry === "string" && seatsEntry.trim() !== "" ? Number(seatsEntry) : undefined;
 
     const billingEntry = formData.get("billingStatus");
     const billingStatus =
-      typeof billingEntry === "string" && (Object.values(BillingStatus) as string[]).includes(billingEntry)
-        ? (billingEntry as BillingStatus)
-        : undefined;
+      typeof billingEntry === "string" && isBillingStatus(billingEntry) ? billingEntry : undefined;
 
     const seatsValue = typeof seats === "number" && Number.isFinite(seats) && seats > 0 ? Math.trunc(seats) : undefined;
     await prisma.school.update({
@@ -87,10 +95,11 @@ export default async function AdminSchoolPage({ params }: { params: { id: string
               defaultValue={school.plan}
               className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-100"
             >
-              <option value="free">フリー</option>
-              <option value="starter">スターター</option>
-              <option value="growth">グロース</option>
-              <option value="enterprise">エンタープライズ</option>
+              {SCHOOL_PLAN_VALUES.map((value) => (
+                <option key={value} value={value}>
+                  {SCHOOL_PLAN_LABELS[value]}
+                </option>
+              ))}
             </select>
           </label>
           <label className="space-y-1 text-sm text-slate-700">
@@ -110,11 +119,11 @@ export default async function AdminSchoolPage({ params }: { params: { id: string
               defaultValue={school.billingStatus}
               className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-100"
             >
-              <option value="trial">お試し中</option>
-              <option value="active">有効</option>
-              <option value="delinquent">支払い遅延</option>
-              <option value="suspended">停止中</option>
-              <option value="cancelled">解約済み</option>
+              {BILLING_STATUS_VALUES.map((value) => (
+                <option key={value} value={value}>
+                  {BILLING_STATUS_LABELS[value]}
+                </option>
+              ))}
             </select>
           </label>
           <button type="submit" className="col-span-full rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white">
