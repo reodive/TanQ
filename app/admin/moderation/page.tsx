@@ -11,6 +11,23 @@ type ModerationEntity = "forumPost" | "chatMessage" | "note" | "resourceFile";
 
 type ModerateAction = "dismiss" | "remove";
 
+type ChatReport = {
+  id: string;
+  body: string;
+  reports: number;
+  createdAt: Date;
+  sender: {
+    name: string;
+  };
+  conversation?: {
+    userA: { name: string };
+    userB: { name: string };
+  } | null;
+  room?: {
+    name: string;
+  } | null;
+};
+
 function truncate(text: string, length = 220) {
   if (text.length <= length) return text;
   return `${text.slice(0, length - 1)}…`;
@@ -22,7 +39,7 @@ export default async function ModerationPage() {
     redirect("/dashboard");
   }
 
-  const [forumReports, chatReports, noteReports, resourceReports] = await Promise.all([
+  const [forumReports, chatReportsRaw, noteReports, resourceReports] = await Promise.all([
     prisma.forumPost.findMany({
       where: { reports: { gt: 0 } },
       orderBy: { reports: "desc" },
@@ -73,6 +90,8 @@ export default async function ModerationPage() {
       }
     })
   ]);
+
+  const chatReports: ChatReport[] = chatReportsRaw as ChatReport[];
 
   async function moderate(action: ModerateAction, entity: ModerationEntity, targetId: string) {
     "use server";
@@ -136,7 +155,7 @@ export default async function ModerationPage() {
       <Card title="チャットメッセージの通報">
         {chatReports.length === 0 && <p className="text-sm text-slate-500">チャットの通報はありません。</p>}
         <div className="space-y-4">
-          {chatReports.map((message) => {
+          {chatReports.map((message: ChatReport) => {
             const contextLabel = message.conversation
               ? `DM: ${message.conversation.userA.name} / ${message.conversation.userB.name}`
               : message.room
