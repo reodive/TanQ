@@ -28,6 +28,38 @@ type ChatReport = {
   } | null;
 };
 
+type NoteReport = {
+  id: string;
+  title: string;
+  content: string;
+  reports: number;
+  createdBy: {
+    name: string;
+  };
+};
+
+type ResourceReport = {
+  id: string;
+  filename: string;
+  description: string | null;
+  reports: number;
+  owner: {
+    name: string;
+  };
+};
+
+type ForumReport = {
+  id: string;
+  body: string;
+  reports: number;
+  createdBy: {
+    name: string;
+  };
+  thread: {
+    title: string;
+  };
+};
+
 function truncate(text: string, length = 220) {
   if (text.length <= length) return text;
   return `${text.slice(0, length - 1)}…`;
@@ -39,7 +71,7 @@ export default async function ModerationPage() {
     redirect("/dashboard");
   }
 
-  const [forumReports, chatReportsRaw, noteReports, resourceReports] = await Promise.all([
+  const [forumReportsRaw, chatReportsRaw, noteReportsRaw, resourceReportsRaw] = await Promise.all([
     prisma.forumPost.findMany({
       where: { reports: { gt: 0 } },
       orderBy: { reports: "desc" },
@@ -92,6 +124,9 @@ export default async function ModerationPage() {
   ]);
 
   const chatReports: ChatReport[] = chatReportsRaw as ChatReport[];
+  const noteReports: NoteReport[] = noteReportsRaw as NoteReport[];
+  const resourceReports: ResourceReport[] = resourceReportsRaw as ResourceReport[];
+  const forumReports: ForumReport[] = forumReportsRaw as ForumReport[];
 
   async function moderate(action: ModerateAction, entity: ModerationEntity, targetId: string) {
     "use server";
@@ -187,7 +222,7 @@ export default async function ModerationPage() {
       <Card title="ノートの通報">
         {noteReports.length === 0 && <p className="text-sm text-slate-500">ノートの通報はありません。</p>}
         <div className="space-y-4">
-          {noteReports.map((note) => (
+          {noteReports.map((note: NoteReport) => (
             <div key={note.id} className="rounded-md border border-slate-200 p-4 text-sm text-slate-700">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
@@ -213,7 +248,7 @@ export default async function ModerationPage() {
       <Card title="共有ファイルの通報">
         {resourceReports.length === 0 && <p className="text-sm text-slate-500">共有ファイルの通報はありません。</p>}
         <div className="space-y-4">
-          {resourceReports.map((file) => (
+          {resourceReports.map((file: ResourceReport) => (
             <div key={file.id} className="rounded-md border border-slate-200 p-4 text-sm text-slate-700">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
@@ -239,7 +274,7 @@ export default async function ModerationPage() {
       <Card title="フォーラム投稿の通報">
         {forumReports.length === 0 && <p className="text-sm text-slate-500">フォーラムの通報はありません。</p>}
         <div className="space-y-4">
-          {forumReports.map((post) => (
+          {forumReports.map((post: ForumReport) => (
             <div key={post.id} className="rounded-md border border-slate-200 p-4 text-sm text-slate-700">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
