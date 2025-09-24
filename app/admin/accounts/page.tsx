@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { AccountCreateForm } from "./AccountCreateForm";
 import { DeleteAccountButton } from "./DeleteAccountButton";
 import { ROLE_LABELS, resolveLabel } from "@/lib/labels";
+import type { School } from "@prisma/client";
 
 const NAV_SYS_ADMINS = "sysAdmins";
 const NAV_UNASSIGNED = "unassigned";
@@ -14,6 +15,12 @@ const NAV_UNASSIGNED = "unassigned";
 type PageProps = {
   searchParams: {
     schoolId?: string;
+  };
+};
+
+type SchoolWithUserCount = School & {
+  _count: {
+    users: number;
   };
 };
 
@@ -29,7 +36,7 @@ export default async function AdminAccountsPage({ searchParams }: PageProps) {
     redirect("/dashboard");
   }
 
-  const [schools, sysAdmins, unassignedUsers] = await Promise.all([
+  const [schools, sysAdmins, unassignedUsers] = (await Promise.all([
     prisma.school.findMany({
       orderBy: { name: "asc" },
       include: {
@@ -46,11 +53,15 @@ export default async function AdminAccountsPage({ searchParams }: PageProps) {
       where: { schoolId: null, role: { not: "sysAdmin" } },
       orderBy: { createdAt: "desc" }
     })
-  ]);
+  ])) as [
+    SchoolWithUserCount[],
+    Awaited<ReturnType<typeof prisma.user.findMany>>,
+    Awaited<ReturnType<typeof prisma.user.findMany>>
+  ];
 
   const navItems: SchoolNavItem[] = [
     { id: NAV_SYS_ADMINS, name: "システム管理者", count: sysAdmins.length },
-    ...schools.map((school) => ({
+    ...schools.map((school: SchoolWithUserCount) => ({
       id: school.id,
       name: school.name,
       count: school._count.users
