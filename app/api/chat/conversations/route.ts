@@ -12,6 +12,19 @@ export async function GET(req: NextRequest) {
   }
   const requester = ctx.user;
 
+  type ConversationWithParticipants = Awaited<ReturnType<typeof prisma.conversation.findMany>>[number] & {
+    userA: {
+      id: string;
+      name: string;
+      role: string;
+    };
+    userB: {
+      id: string;
+      name: string;
+      role: string;
+    };
+  };
+
   const conversations = await prisma.conversation.findMany({
     where: {
       OR: [
@@ -31,7 +44,7 @@ export async function GET(req: NextRequest) {
   });
 
   return json({
-    conversations: conversations.map((conversation) => {
+    conversations: conversations.map((conversation: ConversationWithParticipants) => {
       const otherParticipant = conversation.userAId === requester.id ? conversation.userB : conversation.userA;
       return {
         ...conversation,
