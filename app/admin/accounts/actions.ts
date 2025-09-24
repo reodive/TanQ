@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { hashPassword } from "@/lib/auth";
 import { getCurrentUser } from "@/lib/server-auth";
 import { revalidatePath } from "next/cache";
-import { Prisma } from "@prisma/client";
+import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 import { z } from "zod";
 
 export type AccountActionState = {
@@ -103,7 +103,7 @@ export async function createAccountAction(
       message: `${user.name}さんのアカウントを作成しました。${note}`
     };
   } catch (err) {
-    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+    if (err instanceof PrismaClientKnownRequestError && err.code === "P2002") {
       return { status: "error", message: "このメールアドレスは既に登録されています" };
     }
     console.error("createAccountAction error", err);
