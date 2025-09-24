@@ -7,7 +7,6 @@ import { Badge } from "@/components/ui/badge";
 import { AccountCreateForm } from "./AccountCreateForm";
 import { DeleteAccountButton } from "./DeleteAccountButton";
 import { ROLE_LABELS, resolveLabel } from "@/lib/labels";
-import type { School } from "@prisma/client";
 
 const NAV_SYS_ADMINS = "sysAdmins";
 const NAV_UNASSIGNED = "unassigned";
@@ -18,7 +17,9 @@ type PageProps = {
   };
 };
 
-type SchoolWithUserCount = School & {
+type SchoolWithUserCount = {
+  id: string;
+  name: string;
   _count: {
     users: number;
   };
