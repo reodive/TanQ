@@ -53,8 +53,8 @@ export async function POST(req: NextRequest, { params }: { params: { conversatio
   if (!parsed.success) {
     return error("入力内容が正しくありません", 422, { issues: parsed.error.flatten() });
   }
-  const message = await prisma.$transaction(async (tx) => {
-    const created = await tx.chatMessage.create({
+  const [message] = await prisma.$transaction([
+    prisma.chatMessage.create({
       data: {
         conversationId,
         senderId: requester.id,
@@ -65,13 +65,12 @@ export async function POST(req: NextRequest, { params }: { params: { conversatio
           select: { id: true, name: true, role: true }
         }
       }
-    });
-    await tx.conversation.update({
+    }),
+    prisma.conversation.update({
       where: { id: conversationId },
       data: { updatedAt: new Date() }
-    });
-    return created;
-  });
+    })
+  ]);
 
   await logDirectMessage({
     actorId: requester.id,
