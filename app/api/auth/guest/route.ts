@@ -1,12 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { signToken, hashPassword, stripPassword } from "@/lib/auth";
-import { SchoolPlan, BillingStatus, Role } from "@prisma/client";
 
-const ALLOWED_ROLES: Role[] = ["student", "responder", "schoolAdmin", "sysAdmin"];
+type RoleValue = "student" | "responder" | "schoolAdmin" | "sysAdmin";
+type SchoolPlanValue = "free" | "starter" | "growth" | "enterprise";
+type BillingStatusValue = "trial" | "active" | "delinquent" | "suspended" | "cancelled";
+
+const ALLOWED_ROLES: RoleValue[] = ["student", "responder", "schoolAdmin", "sysAdmin"];
 const guestEnabled = process.env.ENABLE_GUEST_ACCESS !== "false";
 
-const roleLabel: Record<Role, string> = {
+const roleLabel: Record<RoleValue, string> = {
   student: "生徒",
   responder: "メンター",
   schoolAdmin: "学校管理者",
@@ -14,6 +17,8 @@ const roleLabel: Record<Role, string> = {
 };
 
 const guestSchoolName = "ゲストデモ校";
+const guestPlan: SchoolPlanValue = "growth";
+const guestBillingStatus: BillingStatusValue = "active";
 
 export async function POST(req: NextRequest) {
   if (!guestEnabled) {
@@ -22,7 +27,7 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json().catch(() => ({}));
   const requestedRole = typeof body?.role === "string" ? body.role : req.nextUrl.searchParams.get("role");
-  const role = (ALLOWED_ROLES.includes(requestedRole as Role) ? requestedRole : "student") as Role;
+  const role = (ALLOWED_ROLES.includes(requestedRole as RoleValue) ? requestedRole : "student") as RoleValue;
 
   let targetSchoolId: string | null = null;
   if (role !== "sysAdmin") {
@@ -32,17 +37,17 @@ export async function POST(req: NextRequest) {
       guestSchool = await prisma.school.create({
         data: {
           name: guestSchoolName,
-          plan: SchoolPlan.growth,
+          plan: guestPlan,
           seats: 50,
-          billingStatus: BillingStatus.active
+          billingStatus: guestBillingStatus
         }
       });
     } else {
       guestSchool = await prisma.school.update({
         where: { id: guestSchool.id },
         data: {
-          billingStatus: BillingStatus.active,
-          plan: SchoolPlan.growth
+          billingStatus: guestBillingStatus,
+          plan: guestPlan
         }
       });
     }
