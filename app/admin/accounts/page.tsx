@@ -25,6 +25,14 @@ type SchoolWithUserCount = {
   };
 };
 
+type AdminUser = {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  createdAt: Date;
+};
+
 type SchoolNavItem = {
   id: string;
   name: string;
@@ -56,8 +64,8 @@ export default async function AdminAccountsPage({ searchParams }: PageProps) {
     })
   ])) as [
     SchoolWithUserCount[],
-    Awaited<ReturnType<typeof prisma.user.findMany>>,
-    Awaited<ReturnType<typeof prisma.user.findMany>>
+    AdminUser[],
+    AdminUser[]
   ];
 
   const navItems: SchoolNavItem[] = [
@@ -75,7 +83,7 @@ export default async function AdminAccountsPage({ searchParams }: PageProps) {
       ? searchParams.schoolId
       : navItems[0]?.id;
 
-  let users = sysAdmins;
+  let users: AdminUser[] = sysAdmins;
   let title = "システム管理者アカウント";
   let subtitle = "プラットフォーム全体を管理するアカウントの一覧です。";
 
@@ -89,10 +97,10 @@ export default async function AdminAccountsPage({ searchParams }: PageProps) {
       if (school) {
         title = `${school.name} のアカウント`;
         subtitle = `ユーザー数: ${school._count.users} 名`;
-        users = await prisma.user.findMany({
+        users = (await prisma.user.findMany({
           where: { schoolId: school.id },
           orderBy: { createdAt: "desc" }
-        });
+        })) as AdminUser[];
       }
     }
   }
@@ -156,7 +164,7 @@ export default async function AdminAccountsPage({ searchParams }: PageProps) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-slate-700">
-                {users.map((user) => (
+                {users.map((user: AdminUser) => (
                   <tr key={user.id}>
                     <td className="px-3 py-2 font-medium text-slate-800">{user.name}</td>
                     <td className="px-3 py-2">{user.email}</td>
