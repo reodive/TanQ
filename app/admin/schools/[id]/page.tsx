@@ -22,6 +22,14 @@ type SchoolUser = {
   role: keyof typeof ROLE_LABELS;
 };
 
+type SchoolPurchase = {
+  id: string;
+  item: keyof typeof PURCHASE_ITEM_LABELS;
+  amountJpy: number;
+  status: keyof typeof PURCHASE_STATUS_LABELS;
+  createdAt: Date;
+};
+
 const SCHOOL_PLAN_VALUES = Object.keys(SCHOOL_PLAN_LABELS) as SchoolPlanValue[];
 const BILLING_STATUS_VALUES = Object.keys(BILLING_STATUS_LABELS) as BillingStatusValue[];
 
@@ -86,6 +94,8 @@ export default async function AdminSchoolPage({ params }: { params: { id: string
     });
   }
 
+  const purchases = school.purchases as unknown as SchoolPurchase[];
+
   return (
     <main className="mx-auto max-w-5xl space-y-8 px-6 py-12">
       <Card title={`学校: ${school.name}`}>
@@ -149,12 +159,12 @@ export default async function AdminSchoolPage({ params }: { params: { id: string
       </Card>
       <Card title="購入履歴">
         <ul className="space-y-2 text-sm text-slate-700">
-          {school.purchases.map((purchase) => (
+          {purchases.map((purchase: SchoolPurchase) => (
             <li key={purchase.id}>
               {resolveLabel(PURCHASE_ITEM_LABELS, purchase.item)} / {purchase.amountJpy} 円 / {resolveLabel(PURCHASE_STATUS_LABELS, purchase.status)} / {new Date(purchase.createdAt).toLocaleDateString("ja-JP")}
             </li>
           ))}
-          {school.purchases.length === 0 && <li>購入履歴はありません。</li>}
+          {purchases.length === 0 && <li>購入履歴はありません。</li>}
         </ul>
       </Card>
     </main>
