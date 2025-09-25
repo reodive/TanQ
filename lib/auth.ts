@@ -24,7 +24,20 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
 }
 
 export function signToken(payload: AuthTokenPayload): string {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: TOKEN_EXPIRY });
+  try {
+    return jwt.sign(
+      {
+        sub: payload.sub,
+        role: String(payload.role),
+        rank: String(payload.rank),
+      },
+      JWT_SECRET,
+      { expiresIn: TOKEN_EXPIRY }
+    );
+  } catch (err) {
+    console.error("JWT sign error:", err);
+    throw new Error("Failed to generate token");
+  }
 }
 
 export function verifyToken(token?: string): AuthTokenPayload | null {
