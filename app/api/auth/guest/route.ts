@@ -22,16 +22,24 @@ const guestBillingStatus: BillingStatusValue = "active";
 
 export async function POST(req: NextRequest) {
   if (!guestEnabled) {
-    return NextResponse.json({ error: { message: "ゲストログインは無効化されています" } }, { status: 403 });
+    return NextResponse.json(
+      { error: { message: "ゲストログインは無効化されています" } },
+      { status: 403 }
+    );
   }
 
   const body = await req.json().catch(() => ({}));
-  const requestedRole = typeof body?.role === "string" ? body.role : req.nextUrl.searchParams.get("role");
-  const role = (ALLOWED_ROLES.includes(requestedRole as RoleValue) ? requestedRole : "student") as RoleValue;
+  const requestedRole =
+    typeof body?.role === "string" ? body.role : req.nextUrl.searchParams.get("role");
+  const role = (ALLOWED_ROLES.includes(requestedRole as RoleValue)
+    ? requestedRole
+    : "student") as RoleValue;
 
   let targetSchoolId: string | null = null;
   if (role !== "sysAdmin") {
-    let guestSchool = await prisma.school.findFirst({ where: { name: guestSchoolName } });
+    let guestSchool = await prisma.school.findFirst({
+      where: { name: guestSchoolName }
+    });
 
     if (!guestSchool) {
       guestSchool = await prisma.school.create({
@@ -86,13 +94,24 @@ export async function POST(req: NextRequest) {
   const token = signToken({ sub: user.id, role: user.role, rank: user.rank });
   const safeUser = stripPassword({ ...user, wallet });
 
-  const redirectTo = role === "sysAdmin" ? "/admin/accounts" : "/dashboard";
+  // 🔑 redirectTo は必ず文字列を保証する
+  const redirectTo: string =
+    role === "sysAdmin" ? "/admin/accounts" : "/dashboard";
 
-  const res = NextResponse.json({ success: true, data: { user: safeUser, token, redirectTo } });
+  const res = NextResponse.json({
+    success: true,
+    data: {
+      user: safeUser,
+      token: token || "",
+      redirectTo: redirectTo || "/dashboard"
+    }
+  });
+
   res.cookies.set("tanq_token", token, {
     httpOnly: true,
     sameSite: "lax",
     maxAge: 60 * 60 * 6
   });
+
   return res;
 }
