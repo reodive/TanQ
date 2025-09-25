@@ -8,7 +8,7 @@ import { error, json } from "@/lib/http";
 export async function GET(req: NextRequest) {
   const ctx = await getAuthContextFromRequest(req);
   if (!ctx.user || !ctx.payload) {
-    return error("ログインが必要です", 401);
+    return error("ログインが忁E��でぁE, 401);
   }
 
   await ensureAutoMemberships({
@@ -36,33 +36,36 @@ export async function GET(req: NextRequest) {
   });
 
   return json({
-    rooms: rooms.map(({ memberships, ...rest }) => ({
-      ...rest,
-      membership: memberships[0] ?? null
-    }))
+    rooms: rooms.map((room) => {
+      const { memberships, ...rest } = room;
+      return {
+        ...rest,
+        membership: memberships[0] ?? null
+      };
+    })
   });
 }
 
 export async function POST(req: NextRequest) {
   const ctx = await getAuthContextFromRequest(req);
   if (!ctx.user || !ctx.payload) {
-    return error("ログインが必要です", 401);
+    return error("ログインが忁E��でぁE, 401);
   }
   try {
     requireRole(ctx.payload, ["schoolAdmin", "sysAdmin"]);
   } catch {
-    return error("部屋を作成できる権限がありません", 403);
+    return error("部屋を作�Eできる権限がありません", 403);
   }
 
   const body = await req.json().catch(() => null);
   const parsed = chatRoomCreateSchema.safeParse(body);
   if (!parsed.success) {
-    return error("入力内容が正しくありません", 422, { issues: parsed.error.flatten() });
+    return error("入力�E容が正しくありません", 422, { issues: parsed.error.flatten() });
   }
 
   const { name, slug: slugInput, description, schoolId, grade, tags } = parsed.data;
   if (schoolId && ctx.payload.role !== "sysAdmin" && schoolId !== ctx.user.schoolId) {
-    return error("所属する学校のIDのみ指定できます", 403);
+    return error("所属する学校のIDのみ持E��できまぁE, 403);
   }
 
   const baseSlug = deriveRoomSlug(name, slugInput);
@@ -104,3 +107,4 @@ export async function POST(req: NextRequest) {
     }
   }, 201);
 }
+
