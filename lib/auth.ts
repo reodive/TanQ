@@ -48,6 +48,16 @@ export function verifyToken(token?: string): AuthTokenPayload | null {
       role: string;
       rank: string;
     };
+    const validRoles = Object.values(Role) as string[];
+    const validRanks = Object.values(RankTier) as string[];
+    if (!validRoles.includes(decoded.role)) {
+      console.warn(`Invalid role in token: ${decoded.role}`);
+      return null;
+    }
+    if (!validRanks.includes(decoded.rank)) {
+      console.warn(`Invalid rank in token: ${decoded.rank}`);
+      return null;
+    }
     return {
       sub: decoded.sub,
       role: decoded.role as Role,
