@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
     });
 
     const token = signToken({ sub: user.id, role: user.role, rank: user.rank });
-    // Prismaオブジェクトをそのまま返すとJSON化で失敗するため、必要なフィールドだけを整形
+
     const safeUser = {
       id: user.id,
       name: user.name,
@@ -87,6 +87,8 @@ export async function POST(req: NextRequest) {
       role: user.role,
       rank: user.rank,
       schoolId: user.schoolId,
+      createdAt: user.createdAt.toISOString(),
+      updatedAt: user.updatedAt.toISOString(),
       wallet: wallet
         ? {
             id: wallet.id,
@@ -95,11 +97,12 @@ export async function POST(req: NextRequest) {
           }
         : null,
     };
+
     const redirectTo: string = role === "sysAdmin" ? "/admin/accounts" : "/dashboard";
 
     const res = NextResponse.json({
       success: true,
-      data: { user: safeUser, token: token || "", redirectTo: redirectTo || "/dashboard" }
+      data: { user: safeUser, token, redirectTo }
     });
     res.cookies.set("tanq_token", token, {
       httpOnly: true,
