@@ -16,7 +16,7 @@ export const registerSchema = z.object({
 });
 
 export const loginSchema = z.object({
-  email: z.string().email(),
+  email: z.string().min(1), // allow guest/demo emails without strict RFC validation
   password: z.string().min(1)
 });
 
