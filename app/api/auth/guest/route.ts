@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { signToken, hashPassword, stripPassword } from "@/lib/auth";
+import { signToken, hashPassword } from "@/lib/auth";
 
 type RoleValue = "student" | "responder" | "schoolAdmin" | "sysAdmin";
 type SchoolPlanValue = "free" | "starter" | "growth" | "enterprise";
