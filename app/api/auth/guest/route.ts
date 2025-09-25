@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { signToken, hashPassword } from "@/lib/auth";
-
+import { signToken, hashPassword } from "@/lib/auth"; // ← ここを修正
 type RoleValue = "student" | "responder" | "schoolAdmin" | "sysAdmin";
 type SchoolPlanValue = "free" | "starter" | "growth" | "enterprise";
 type BillingStatusValue = "trial" | "active" | "delinquent" | "suspended" | "cancelled";
