@@ -43,8 +43,18 @@ export function signToken(payload: AuthTokenPayload): string {
 export function verifyToken(token?: string): AuthTokenPayload | null {
   if (!token) return null;
   try {
-    return jwt.verify(token, JWT_SECRET) as AuthTokenPayload;
-  } catch {
+    const decoded = jwt.verify(token, JWT_SECRET) as {
+      sub: string;
+      role: string;
+      rank: string;
+    };
+    return {
+      sub: decoded.sub,
+      role: decoded.role as Role,
+      rank: decoded.rank as RankTier,
+    };
+  } catch (err) {
+    console.error("JWT verify error:", err);
     return null;
   }
 }
