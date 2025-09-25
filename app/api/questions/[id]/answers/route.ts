@@ -22,7 +22,10 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   if (!parsed.success) {
     return error("入力内容が正しくありません", 422, { issues: parsed.error.flatten() });
   }
-  const existingAnswer = question.answers.find((a) => a.responderId === ctx.payload!.sub);
+  type QuestionWithAnswers = NonNullable<typeof question>;
+  type AnswerForQuestion = QuestionWithAnswers["answers"][number];
+
+  const existingAnswer = question.answers.find((answer: AnswerForQuestion) => answer.responderId === ctx.payload!.sub);
   if (existingAnswer) {
     return error("すでに回答済みです", 409);
   }
