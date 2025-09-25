@@ -35,8 +35,10 @@ export async function GET(req: NextRequest) {
     orderBy: { createdAt: "asc" }
   });
 
+  type RoomWithMembership = (typeof rooms)[number];
+
   return json({
-    rooms: rooms.map((room) => {
+    rooms: rooms.map((room: RoomWithMembership) => {
       const { memberships, ...rest } = room;
       return {
         ...rest,
@@ -107,4 +109,5 @@ export async function POST(req: NextRequest) {
     }
   }, 201);
 }
+
 
