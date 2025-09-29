@@ -3,7 +3,7 @@ frontend:
   phases:
     preBuild:
       commands:
-        - npm ci --production=false
+        - npm install
         - echo "Node.js version $(node --version)"
         - echo "NPM version $(npm --version)"
     build:
