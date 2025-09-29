@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { prisma, testDatabaseConnection } from "@/lib/prisma";
 import { signToken, hashPassword } from "@/lib/auth"; // ← ここを修正
 type RoleValue = "student" | "responder" | "schoolAdmin" | "sysAdmin";
 type SchoolPlanValue = "free" | "starter" | "growth" | "enterprise";
@@ -21,6 +21,16 @@ const guestBillingStatus: BillingStatusValue = "active";
 
 export async function POST(req: NextRequest) {
   try {
+    // データベース接続テスト
+    const isConnected = await testDatabaseConnection();
+    if (!isConnected) {
+      console.error("❌ Database connection failed in guest route");
+      return NextResponse.json(
+        { error: { message: "データベース接続エラー。DATABASE_URLを確認してください。" } },
+        { status: 500 }
+      );
+    }
+
     if (!guestEnabled) {
       return NextResponse.json(
         { error: { message: "ゲストログインは無効化されています" } },
