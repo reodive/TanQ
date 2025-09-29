@@ -3,14 +3,16 @@ frontend:
   phases:
     preBuild:
       commands:
-        - npm install
-        - echo "Node.js version $(node --version)"
-        - echo "NPM version $(npm --version)"
+        - echo "Installing dependencies without postinstall..."
+        - npm install --ignore-scripts
+        - echo "Generating Prisma client..."
+        - npx prisma generate
+        - echo "Installation completed"
     build:
       commands:
-        - echo "Starting build process..."
+        - echo "Starting Next.js build..."
         - npm run build
-        - echo "Build completed successfully"
+        - echo "Build successful"
   artifacts:
     baseDirectory: .next
     files:
